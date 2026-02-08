@@ -1,78 +1,60 @@
-<!DOCTYPE html>
-<html lang="hi">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Shayari Magic - इंस्टेंट शायरी</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        body { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; color: white; }
-        .glass { background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.2); }
-    </style>
-</head>
-<body class="p-5 font-sans">
-    <div class="max-w-md mx-auto">
-        <header class="text-center mb-10">
-            <h1 class="text-4xl font-bold mb-2">Shayari AI ✨</h1>
-            <p class="text-blue-100">कुछ भी बोलिए, हम शायरी बनाएंगे!</p>
-        </header>
+import { useState } from "react";
 
-        <div class="glass p-6 rounded-3xl shadow-2xl">
-            <label class="block mb-2 text-sm font-medium">किसके लिए या क्या स्थिति है?</label>
-            <textarea id="userTopic" class="w-full p-4 rounded-2xl bg-white/20 border-none text-white placeholder-white/50 focus:ring-2 focus:ring-white outline-none" rows="3" placeholder="उदा: मेरा दोस्त बहुत कंजूस है..."></textarea>
-            
-            <button onclick="generateShayari()" class="w-full mt-4 bg-white text-purple-700 font-bold py-4 rounded-2xl hover:bg-purple-100 transition-all shadow-lg">
-                शायरी जादू दिखाओ 🪄
-            </button>
+export default function Home() {
+  const [topic, setTopic] = useState("");
+  const [result, setResult] = useState("");
+  const [loading, setLoading] = useState(false);
 
-            <div id="resultCard" class="hidden mt-8 p-6 bg-white/20 rounded-2xl border-l-4 border-white animate-pulse">
-                <p id="resultText" class="text-xl italic leading-relaxed"></p>
-                <button onclick="shareWhatsApp()" class="mt-4 flex items-center justify-center w-full bg-green-500 py-2 rounded-xl text-sm font-bold">
-                    WhatsApp पर भेजें ➔
-                </button>
-            </div>
+  const generateShayari = async () => {
+    if (!topic) {
+      alert("कुछ लिखो तो सही!");
+      return;
+    }
+
+    setLoading(true);
+    setResult("AI सोच रहा है... 🧠");
+
+    const res = await fetch("/api/shayari", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ topic }),
+    });
+
+    const data = await res.json();
+    setResult(data.text);
+    setLoading(false);
+  };
+
+  const shareWhatsApp = () => {
+    window.open(
+      `https://wa.me/?text=${encodeURIComponent(
+        result + "\n\n- AI Shayari App से"
+      )}`
+    );
+  };
+
+  return (
+    <div style={{ padding: 30, fontFamily: "sans-serif" }}>
+      <h1>Shayari AI ✨</h1>
+
+      <textarea
+        placeholder="उदा: मेरा दोस्त बहुत कंजूस है..."
+        value={topic}
+        onChange={(e) => setTopic(e.target.value)}
+        rows={3}
+        style={{ width: "100%", padding: 10 }}
+      />
+
+      <button onClick={generateShayari} style={{ marginTop: 10 }}>
+        शायरी जादू दिखाओ 🪄
+      </button>
+
+      {result && (
+        <div style={{ marginTop: 20 }}>
+          <p>{result}</p>
+          <button onClick={shareWhatsApp}>WhatsApp पर भेजें</button>
         </div>
-
-        <footer class="mt-20 text-center text-white/50 text-sm">
-            © 2026 AI Shayari Maker | Monetized by AdMob
-        </footer>
+      )}
     </div>
-
-    <script>
-        async function generateShayari() {
-            const topic = document.getElementById('userTopic').value;
-            const resultCard = document.getElementById('resultCard');
-            const resultText = document.getElementById('resultText');
-
-            if(!topic) return alert("कुछ लिखो तो सही!");
-
-            resultCard.classList.remove('hidden');
-            resultText.innerText = "AI सोच रहा है... 🧠";
-
-            try {
-                // यहाँ हम आपकी API Key डालेंगे (अगले स्टेप में)
-                const apiKey = "";
-                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
-                
-                const response = await fetch(url, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({"contents": [{"parts":[{"text": "Write a funny or emotional 2 line hindi shayari about: " + topic}]}]})
-                });
-                
-                const data = await response.json();
-                const text = data.candidates[0].content.parts[0].text;
-                resultText.innerText = text;
-                resultCard.classList.remove('animate-pulse');
-            } catch (e) {
-                resultText.innerText = "आज दिमाग थक गया है, कल आना! (Check API Key)";
-            }
-        }
-
-        function shareWhatsApp() {
-            const text = document.getElementById('resultText').innerText;
-            window.open(`https://wa.me/?text=${encodeURIComponent(text + "\n\n- बनाई गई AI Shayari App से")}`);
-        }
-    </script>
-</body>
-</html>
+  );
+}
